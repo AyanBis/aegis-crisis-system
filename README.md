@@ -68,7 +68,7 @@ The system uses Machine Learning, decision engines, and AI reasoning to:
 
 ## System Architecture
 
-'''
+```
 Input (Text / Audio / Image / CCTV)
         ↓
 AI/ML Models (Classification and Analysis)
@@ -80,7 +80,7 @@ Digital Twin Simulation
 Database (Supabase)
         ↓
 Dashboard UI (Real-time Monitoring)
-'''
+```
 
 ---
 
