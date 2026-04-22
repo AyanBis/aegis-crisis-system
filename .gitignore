@@ -1,0 +1,79 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+
+# =========================
+# Virtual Environment
+# =========================
+venv/
+.env/
+.env
+
+# =========================
+# Environment Variables (IMPORTANT)
+# =========================
+.env.local
+.env.production
+
+# =========================
+# Node / Frontend
+# =========================
+node_modules/
+.next/
+dist/
+build/
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# Supabase / Secrets
+# =========================
+supabase/.temp/
+
+# =========================
+# TEMP FILES (VERY IMPORTANT FOR YOU)
+# =========================
+temp_*
+*.wav
+*.aiff
+
+# =========================
+# ML MODELS (CRITICAL)
+# =========================
+models/*.pkl
+models/*.h5
+models/*.pt
+
+# =========================
+# DATA FILES (OPTIONAL)
+# =========================
+data/raw/
+data/processed/
+
+# =========================
+# Misc
+# =========================
+*.csv
