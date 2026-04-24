@@ -4,6 +4,8 @@ import { initialIncidents } from "../data/mockData";
 const AppContext = createContext();
 const THEME_STORAGE_KEY = "aegis-theme";
 
+// Added your Backend URL here
+const API_BASE_URL = "http://127.0.0.1:8000"; 
 const MAX_LOG_ENTRIES = 40;
 
 const normalizeIncident = (incident) => ({
@@ -12,11 +14,15 @@ const normalizeIncident = (incident) => ({
   location: incident.location || "Unknown",
   priority: incident.priority || "MEDIUM",
   status: incident.status || "ACTIVE",
-  confidence:
-    typeof incident.confidence === "number" ? incident.confidence : 75,
+  confidence: typeof incident.confidence === "number" ? incident.confidence : 75,
   timestamp: incident.timestamp || "just now",
   createdAt: incident.createdAt || new Date().toISOString(),
   resolvedAt: incident.resolvedAt || null,
+  
+  // --- ADD THESE 3 LINES ---
+  digital_twin: incident.digital_twin || null,
+  llm_explanation: incident.llm_explanation || null,
+  decision: incident.decision || null,
 });
 
 const makeLog = (message, level = "info") => ({
@@ -67,15 +73,66 @@ export const AppProvider = ({ children }) => {
     setExecutionLog((prev) => [log, ...prev].slice(0, MAX_LOG_ENTRIES));
   };
 
-  const addIncident = (incident) => {
-    const newIncident = normalizeIncident(incident);
-    setIncidents((prev) => [newIncident, ...prev]);
-    setSelectedIncident((prev) => prev || newIncident);
+  // UPDATED: Now connects to the backend!
+  const addIncident = async (incidentData) => {
+    appendLog(`Sending report to backend...`, "info");
 
-    appendLog(
-      `Incident reported: ${newIncident.type} at ${newIncident.location} (${newIncident.priority})`,
-      newIncident.priority === "HIGH" ? "critical" : "info",
-    );
+    try {
+      // Package data specifically for FastAPI Form dependencies
+      const formData = new FormData();
+      
+      // 1. UPDATED: Now uses 'text' from the new InputPanel instead of 'type'
+      formData.append("text", incidentData.text || "unknown situation");
+      formData.append("location", incidentData.location || "Unknown");
+
+      // 2. ADDED: Attach files if the user uploaded them!
+      if (incidentData.image) {
+        formData.append("image", incidentData.image);
+      }
+      if (incidentData.audio) {
+        formData.append("audio", incidentData.audio);
+      }
+
+      // Send to your backend
+      const response = await fetch(`${API_BASE_URL}/report`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      // Receive the AI engine's decision
+      const data = await response.json();
+
+      // Normalize it so the dashboard UI understands it
+      const newIncident = normalizeIncident({
+        id: data.incident_id,
+        type: data.crisis_type, 
+        location: data.location,
+        priority: data.decision?.priority || "MEDIUM",
+        status: data.status || "ACTIVE",
+        confidence: Math.round((data.confidence || 0.75) * 100), 
+        timestamp: data.timestamp || new Date().toISOString(),
+        
+        // Save the rich AI data
+        digital_twin: data.digital_twin,
+        llm_explanation: data.llm_explanation,
+        decision: data.decision
+      });
+
+      setIncidents((prev) => [newIncident, ...prev]);
+      setSelectedIncident((prev) => prev || newIncident);
+
+      appendLog(
+        `Backend accepted report: ${newIncident.type} at ${newIncident.location} (${newIncident.priority})`,
+        newIncident.priority === "HIGH" ? "critical" : "success",
+      );
+    } catch (error) {
+      console.error(error);
+      appendLog(`Failed to connect to backend: ${error.message}`, "critical");
+    }
   };
 
   const setIncidentStatus = (incidentId, status) => {

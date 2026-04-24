@@ -7,6 +7,7 @@ import AlertsFeed from "../panels/AlertsFeed";
 import AIInsights from "../panels/AIInsights";
 import ExecutionLog from "../panels/ExecutionLog";
 import InputPanel from "../panels/InputPanel";
+// Notice we removed the CCTVPanel import!
 
 const MainLayout = () => {
   return (
@@ -42,6 +43,7 @@ const MainLayout = () => {
       <div
         className="grid"
         style={{
+          // Reverted back to the original 2-column layout
           gridTemplateColumns: "2fr 1fr",
           marginTop: "16px",
         }}

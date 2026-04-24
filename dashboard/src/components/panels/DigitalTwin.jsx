@@ -98,16 +98,19 @@ const DigitalTwin = () => {
     );
   }
 
+  // --- UPDATED LOGIC TO USE BACKEND DIGITAL TWIN DATA ---
   const isHigh = selectedIncident.priority === "HIGH";
-  const heartRate = isHigh ? 120 : 78;
-  const oxygen = selectedIncident.type === "Fire" ? 88 : 97;
+  const dt = selectedIncident.digital_twin || {}; // Grab the twin data from context
+
+  // Use live data if available, fallback to estimates if not (for old database entries)
+  const heartRate = dt.heart_rate || (isHigh ? 120 : 78);
+  const oxygen = dt.oxygen_level || (selectedIncident.type === "Fire" ? 88 : 97);
 
   const risk =
     selectedIncident.status === "RESOLVED"
       ? "LOW"
-      : isHigh
-        ? "HIGH"
-        : "MEDIUM";
+      : dt.risk_level || (isHigh ? "HIGH" : "MEDIUM");
+  // ------------------------------------------------------
 
   const twinState =
     selectedIncident.status === "RESOLVED" ? "STABLE" : "TRACKING";

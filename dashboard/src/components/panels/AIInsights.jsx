@@ -196,9 +196,19 @@ const AIInsights = () => {
             <div style={{ marginTop: "4px" }}>
               Failure Probability: <strong>{riskScore}%</strong>
             </div>
+            
+            {/* --- UPDATED: Dynamic LLM Explanation --- */}
             <div style={{ color: "var(--muted)", fontSize: "12px", marginTop: "4px" }}>
-              Prediction summary: Elevated risk if response is delayed; continue real-time monitoring.
+              Prediction summary: <strong>{selectedIncident.llm_explanation || "Elevated risk if response is delayed; continue real-time monitoring."}</strong>
             </div>
+
+            {/* --- UPDATED: Dynamic Recommended Action --- */}
+            {selectedIncident.decision?.recommended_action && (
+              <div style={{ color: "#55c7ff", fontSize: "12px", marginTop: "6px", borderTop: "1px solid var(--border)", paddingTop: "4px" }}>
+                Action: {selectedIncident.decision.recommended_action}
+              </div>
+            )}
+            
           </div>
         ) : (
           <div style={{ color: "var(--muted)", fontSize: "13px" }}>
