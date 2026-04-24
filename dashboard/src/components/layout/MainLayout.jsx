@@ -7,7 +7,7 @@ import AlertsFeed from "../panels/AlertsFeed";
 import AIInsights from "../panels/AIInsights";
 import ExecutionLog from "../panels/ExecutionLog";
 import InputPanel from "../panels/InputPanel";
-// Notice we removed the CCTVPanel import!
+import CCTVPanel from "../panels/CCTVPanel";
 
 const MainLayout = () => {
   return (
@@ -23,7 +23,8 @@ const MainLayout = () => {
         }}
       >
         <IncidentFeed />
-        <DecisionPanel />
+        {/* Swapped: AI Insights is now in the top row */}
+        <AIInsights /> 
         <DigitalTwin />
       </div>
 
@@ -36,20 +37,21 @@ const MainLayout = () => {
         }}
       >
         <AlertsFeed />
-        <AIInsights />
+        {/* Swapped: Decision Panel is now in the middle row */}
+        <DecisionPanel /> 
       </div>
 
       {/* BOTTOM GRID */}
       <div
         className="grid"
         style={{
-          // Reverted back to the original 2-column layout
-          gridTemplateColumns: "2fr 1fr",
+          gridTemplateColumns: "1.5fr 1fr 1fr",
           marginTop: "16px",
         }}
       >
         <ExecutionLog />
         <InputPanel />
+        <CCTVPanel />
       </div>
     </div>
   );
