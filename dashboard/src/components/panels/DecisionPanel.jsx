@@ -2,13 +2,26 @@ import Card from "../common/Card";
 import StatusBadge from "../common/StatusBadge";
 import { useApp } from "../../context/AppContext";
 
+const tokenStyle = {
+  padding: "8px 12px",
+  border: "1px solid var(--border)",
+  borderRadius: "999px",
+  fontSize: "12px",
+  background: "var(--surface-raised)",
+};
+
 const DecisionPanel = () => {
   const { selectedIncident, setIncidentStatus, resolveIncident } = useApp();
 
   if (!selectedIncident) {
     return (
-      <Card title="Decision Panel">
-        <p>Select an incident to view recommendations and actions.</p>
+      <Card
+        title="Decision Panel"
+        subtitle="Recommended operational playbooks appear here when an incident is in focus."
+      >
+        <div className="panel-section panel-section--dashed" style={{ color: "var(--muted)" }}>
+          Select an incident to view recommendations and actions.
+        </div>
       </Card>
     );
   }
@@ -16,13 +29,14 @@ const DecisionPanel = () => {
   const getActions = () => {
     switch (selectedIncident.type) {
       case "Fire":
-        return ["Dispatch Fire Unit", "Alert Hospitals", "Evacuate Area"];
+        return ["Dispatch fire unit", "Alert hospitals", "Evacuate area"];
       case "Medical":
-        return ["Send Ambulance", "Notify Medical Staff"];
+        return ["Send ambulance", "Notify medical staff", "Secure treatment route"];
       case "Security":
-        return ["Dispatch Security Team", "Lock Nearby Access Points"];
+      case "Threat":
+        return ["Dispatch security team", "Lock nearby access points", "Sweep camera perimeter"];
       default:
-        return ["Monitor Situation"];
+        return ["Monitor situation", "Confirm nearby sensor data"];
     }
   };
 
@@ -31,7 +45,7 @@ const DecisionPanel = () => {
       return ["Fire Dept", "Police", "Ambulance"];
     }
 
-    if (selectedIncident.type === "Security") {
+    if (selectedIncident.type === "Security" || selectedIncident.type === "Threat") {
       return ["Security Ops", "Police"];
     }
 
@@ -40,67 +54,123 @@ const DecisionPanel = () => {
 
   const isResolved = selectedIncident.status === "RESOLVED";
   const isInProgress = selectedIncident.status === "IN_PROGRESS";
+  const recommendedAction =
+    selectedIncident.decision?.recommended_action || getActions()[0];
 
   return (
-    <Card title="Decision Panel">
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <h3>{selectedIncident.type}</h3>
-          <div style={{ display: "flex", gap: "6px" }}>
-            <StatusBadge status={selectedIncident.priority} />
-            <StatusBadge status={selectedIncident.status} />
+    <Card
+      title="Decision Panel"
+      subtitle="Human response recommendations paired with the selected incident."
+    >
+      <div className="stack-lg">
+        <div className="panel-section panel-section--tinted stack-md">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "14px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div className="stack-sm">
+              <div className="eyebrow">Active Focus</div>
+              <h3 style={{ fontSize: "1.8rem" }}>{selectedIncident.type}</h3>
+              <div style={{ color: "var(--muted)" }}>{selectedIncident.location}</div>
+            </div>
+            <div className="inline-wrap">
+              <StatusBadge status={selectedIncident.priority} />
+              <StatusBadge status={selectedIncident.status} />
+            </div>
+          </div>
+
+          <div className="metric-grid metric-grid--three">
+            <div className="metric-tile">
+              <div className="metric-tile__label">Confidence</div>
+              <div className="metric-tile__value" style={{ fontSize: "1.25rem" }}>
+                {selectedIncident.confidence}%
+              </div>
+            </div>
+            <div className="metric-tile">
+              <div className="metric-tile__label">Primary Directive</div>
+              <div className="metric-tile__value" style={{ fontSize: "1rem", lineHeight: 1.2 }}>
+                {recommendedAction}
+              </div>
+            </div>
+            <div className="metric-tile">
+              <div className="metric-tile__label">Current State</div>
+              <div className="metric-tile__value" style={{ fontSize: "1.1rem" }}>
+                {isResolved ? "Closed" : isInProgress ? "Responding" : "Awaiting Response"}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div style={{ color: "var(--muted)" }}>
-          Location: {selectedIncident.location}
-        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: "14px",
+          }}
+        >
+          <div className="panel-section stack-md">
+            <div className="metric-tile__label">Recommended Actions</div>
+            <div className="stack-sm">
+              {getActions().map((action, index) => (
+                <div
+                  key={action}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "12px",
+                    borderRadius: "var(--radius-xs)",
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "999px",
+                      display: "grid",
+                      placeItems: "center",
+                      background: "var(--accent-soft)",
+                      color: "var(--accent-strong)",
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {index + 1}
+                  </div>
+                  <span>{action}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        <div style={{ color: "var(--muted)" }}>
-          Confidence: {selectedIncident.confidence}%
-        </div>
-
-        <div>
-          <strong>Actions:</strong>
-          <ul style={{ marginTop: "6px", paddingLeft: "18px" }}>
-            {getActions().map((action, index) => (
-              <li key={index}>{action}</li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <strong>Responders:</strong>
-          <div style={{ marginTop: "6px", display: "flex", gap: "8px" }}>
-            {getResponders().map((responder, index) => (
-              <span
-                key={index}
-                style={{
-                  padding: "4px 8px",
-                  border: "1px solid var(--border)",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                }}
-              >
-                {responder}
-              </span>
-            ))}
+          <div className="panel-section stack-md">
+            <div className="metric-tile__label">Responder Lineup</div>
+            <div className="inline-wrap">
+              {getResponders().map((responder) => (
+                <span key={responder} style={tokenStyle}>
+                  {responder}
+                </span>
+              ))}
+            </div>
+            <div style={{ color: "var(--muted)", lineHeight: 1.6 }}>
+              Route resources based on proximity, severity, and current room status.
+            </div>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        <div className="inline-wrap">
           {!isResolved && !isInProgress && (
             <button
               type="button"
+              className="button-primary"
               onClick={() => setIncidentStatus(selectedIncident.id, "IN_PROGRESS")}
-              style={{
-                padding: "8px 10px",
-                borderRadius: "8px",
-                border: "1px solid var(--border)",
-                background: "transparent",
-                color: "var(--text)",
-                cursor: "pointer",
-              }}
             >
               Start Response
             </button>
@@ -109,25 +179,18 @@ const DecisionPanel = () => {
           {!isResolved && (
             <button
               type="button"
+              className="button-success"
               onClick={() => resolveIncident(selectedIncident.id)}
-              style={{
-                padding: "8px 10px",
-                borderRadius: "8px",
-                border: "1px solid var(--success)",
-                background: "var(--success)",
-                color: "#08100a",
-                fontWeight: "bold",
-                cursor: "pointer",
-              }}
             >
               Resolve Incident
             </button>
           )}
 
           {isResolved && (
-            <span style={{ color: "var(--muted)", fontSize: "13px" }}>
+            <div className="soft-pill">
+              <span className="status-dot" style={{ background: "var(--success)" }} />
               Incident is resolved.
-            </span>
+            </div>
           )}
         </div>
       </div>

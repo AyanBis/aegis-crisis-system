@@ -4,9 +4,10 @@ import StatusBadge from "../common/StatusBadge";
 import { useApp } from "../../context/AppContext";
 
 const CRISIS_TYPE_COLORS = {
-  FIRE: "#ff4d4f",
+  FIRE: "#ff5a5a",
   MEDICAL: "#4cd964",
-  THREAT: "#39465a",
+  THREAT: "#8fb8ff",
+  SECURITY: "#8fb8ff",
   UNKNOWN: "#ffd60a",
 };
 
@@ -30,6 +31,7 @@ const getAiSummary = (incident) => {
     case "MEDICAL":
       return "Medical distress confidence is high. Fast response and nearest team dispatch recommended.";
     case "THREAT":
+    case "SECURITY":
       return "Behavioral anomaly suggests elevated threat potential. Secure perimeter and verify nearby access points.";
     default:
       return "Signal is partially uncertain. Continue monitoring while validating with nearby sensors or operators.";
@@ -91,6 +93,13 @@ const playAlertTone = () => {
   } catch {
     // Ignore browsers that block autoplay or audio context creation.
   }
+};
+
+const summaryCardStyle = {
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius-sm)",
+  padding: "12px",
+  background: "linear-gradient(180deg, var(--surface-raised), var(--surface))",
 };
 
 const IncidentFeed = () => {
@@ -175,231 +184,232 @@ const IncidentFeed = () => {
   };
 
   return (
-    <Card title="Incident Feed">
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "8px",
-          marginBottom: "12px",
-        }}
-      >
-        <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
-          {typeOptions.map((type) => (
-            <option key={type} value={type}>
-              Type: {type}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={priorityFilter}
-          onChange={(event) => setPriorityFilter(event.target.value)}
-        >
-          <option value="ALL">Priority: ALL</option>
-          <option value="HIGH">Priority: HIGH</option>
-          <option value="MEDIUM">Priority: MEDIUM</option>
-          <option value="LOW">Priority: LOW</option>
-        </select>
-
-        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-          <option value="ALL">Status: ALL</option>
-          <option value="ACTIVE">Status: ACTIVE</option>
-          <option value="IN_PROGRESS">Status: IN_PROGRESS</option>
-          <option value="RESOLVED">Status: RESOLVED</option>
-        </select>
-
-        <input
-          type="text"
-          placeholder="Search location"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-        />
-      </div>
-
-      <div style={{ marginBottom: "10px", color: "var(--muted)", fontSize: "12px" }}>
-        Showing {filteredIncidents.length} of {incidents.length} incidents
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "8px",
-          marginBottom: "10px",
-        }}
-      >
-        <div style={{ fontSize: "12px", color: "var(--muted)" }}>
-          Active {incidentCounts.active} | In Progress {incidentCounts.inProgress} |
-          Resolved {incidentCounts.resolved}
+    <Card
+      title="Incident Feed"
+      subtitle="Filter, triage, and hand off live events from a single queue."
+    >
+      <div className="stack-lg">
+        <div className="metric-grid metric-grid--three">
+          <div style={summaryCardStyle}>
+            <div className="metric-tile__label">Active</div>
+            <div className="metric-tile__value" style={{ fontSize: "1.25rem" }}>
+              {incidentCounts.active}
+            </div>
+          </div>
+          <div style={summaryCardStyle}>
+            <div className="metric-tile__label">In Progress</div>
+            <div className="metric-tile__value" style={{ fontSize: "1.25rem" }}>
+              {incidentCounts.inProgress}
+            </div>
+          </div>
+          <div style={summaryCardStyle}>
+            <div className="metric-tile__label">Resolved</div>
+            <div className="metric-tile__value" style={{ fontSize: "1.25rem" }}>
+              {incidentCounts.resolved}
+            </div>
+          </div>
         </div>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button
-            type="button"
-            onClick={() => setSoundEnabled((prev) => !prev)}
+
+        <div className="panel-section panel-section--tinted stack-md">
+          <div
             style={{
-              padding: "6px 8px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: soundEnabled ? "var(--success-soft)" : "transparent",
-              color: "var(--text)",
-              cursor: "pointer",
-              fontSize: "12px",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: "10px",
             }}
           >
-            Sound {soundEnabled ? "On" : "Off"}
-          </button>
-          <button
-            type="button"
-            onClick={resetFilters}
-            style={{
-              padding: "6px 8px",
-              borderRadius: "6px",
-              border: "1px solid var(--border)",
-              background: "transparent",
-              color: "var(--text)",
-              cursor: "pointer",
-              fontSize: "12px",
-            }}
-          >
-            Reset Filters
-          </button>
-        </div>
-      </div>
+            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+              {typeOptions.map((type) => (
+                <option key={type} value={type}>
+                  Type: {type}
+                </option>
+              ))}
+            </select>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {filteredIncidents.map((incident) => {
-          const typeColor = getTypeColor(incident.type);
-          const typeLabel = getTypeKey(incident.type);
-          const isSelected = selectedIncident?.id === incident.id;
-          const isResolved = incident.status === "RESOLVED";
-
-          return (
-            <div
-              key={incident.id}
-              style={{
-                borderRadius: "10px",
-                border: isSelected
-                  ? `1px solid ${typeColor}`
-                  : "1px solid var(--border)",
-                borderLeft: `5px solid ${typeColor}`,
-                padding: "12px",
-                background: isSelected ? "var(--surface-tint)" : "var(--surface)",
-                opacity: isResolved ? 0.72 : 1,
-              }}
+            <select
+              value={priorityFilter}
+              onChange={(event) => setPriorityFilter(event.target.value)}
             >
-              <div
+              <option value="ALL">Priority: ALL</option>
+              <option value="HIGH">Priority: HIGH</option>
+              <option value="MEDIUM">Priority: MEDIUM</option>
+              <option value="LOW">Priority: LOW</option>
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              <option value="ALL">Status: ALL</option>
+              <option value="ACTIVE">Status: ACTIVE</option>
+              <option value="IN_PROGRESS">Status: IN_PROGRESS</option>
+              <option value="RESOLVED">Status: RESOLVED</option>
+            </select>
+
+            <input
+              type="text"
+              placeholder="Search by location"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "10px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div className="soft-pill">
+              <span className="status-dot" style={{ background: "var(--accent)" }} />
+              <span>
+                Showing <strong>{filteredIncidents.length}</strong> of{" "}
+                <strong>{incidents.length}</strong> incidents
+              </span>
+            </div>
+
+            <div className="inline-wrap">
+              <button
+                type="button"
+                className={soundEnabled ? "button-secondary" : "button-ghost"}
+                onClick={() => setSoundEnabled((prev) => !prev)}
+              >
+                Sound {soundEnabled ? "On" : "Off"}
+              </button>
+              <button type="button" className="button-ghost" onClick={resetFilters}>
+                Reset Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="stack-md scroll-area" style={{ maxHeight: "680px", paddingRight: "4px" }}>
+          {filteredIncidents.map((incident) => {
+            const typeColor = getTypeColor(incident.type);
+            const typeLabel = getTypeKey(incident.type);
+            const isSelected = selectedIncident?.id === incident.id;
+            const isResolved = incident.status === "RESOLVED";
+
+            return (
+              <article
+                key={incident.id}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "8px",
+                  borderRadius: "var(--radius-sm)",
+                  border: isSelected
+                    ? `1px solid ${typeColor}`
+                    : "1px solid var(--border)",
+                  background: isSelected
+                    ? `linear-gradient(180deg, ${typeColor}1a, var(--surface))`
+                    : "linear-gradient(180deg, var(--surface-raised), var(--surface))",
+                  boxShadow: isSelected ? `0 0 0 1px ${typeColor}33` : "var(--shadow-inset)",
+                  padding: "14px",
+                  opacity: isResolved ? 0.76 : 1,
+                  position: "relative",
+                  overflow: "hidden",
                 }}
               >
                 <div
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontWeight: "bold",
+                    position: "absolute",
+                    inset: "0 auto 0 0",
+                    width: "5px",
+                    background: typeColor,
                   }}
-                >
-                  <span
-                    aria-hidden="true"
+                />
+
+                <div className="stack-md">
+                  <div
                     style={{
-                      width: "14px",
-                      height: "14px",
-                      borderRadius: "999px",
-                      background: typeColor,
-                      display: "inline-block",
-                      border: typeLabel === "THREAT" ? "1px solid var(--border-strong)" : "none",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      gap: "10px",
                     }}
-                  />
-                  <span>{typeLabel}</span>
-                  <span style={{ color: "var(--muted)" }}>|</span>
-                  <span>{incident.priority}</span>
+                  >
+                    <div className="stack-sm">
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            width: "12px",
+                            height: "12px",
+                            borderRadius: "999px",
+                            background: typeColor,
+                            display: "inline-block",
+                            boxShadow: `0 0 0 6px ${typeColor}1f`,
+                          }}
+                        />
+                        <h4 style={{ fontSize: "1.3rem" }}>
+                          {typeLabel} <span style={{ color: "var(--muted)" }}>/</span>{" "}
+                          {incident.priority}
+                        </h4>
+                      </div>
+                      <div className="inline-wrap">
+                        <div className="soft-pill" style={{ padding: "6px 10px" }}>
+                          <strong>{incident.location}</strong>
+                        </div>
+                        <div className="soft-pill" style={{ padding: "6px 10px" }}>
+                          {formatTime(incident)}
+                        </div>
+                        <div className="soft-pill" style={{ padding: "6px 10px" }}>
+                          Confidence <strong>{incident.confidence}%</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <StatusBadge status={incident.status} />
+                  </div>
+
+                  <div
+                    style={{
+                      padding: "12px",
+                      borderRadius: "var(--radius-xs)",
+                      border: "1px solid var(--border)",
+                      background: "var(--card-strong)",
+                      color: "var(--muted)",
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    <div className="metric-tile__label" style={{ marginBottom: "6px" }}>
+                      AI Summary
+                    </div>
+                    {getAiSummary(incident)}
+                  </div>
+
+                  <div className="inline-wrap">
+                    <button
+                      type="button"
+                      className={isSelected ? "button-secondary" : "button-primary"}
+                      onClick={() => setSelectedIncident(incident)}
+                    >
+                      {isSelected ? "Focused" : "View Details"}
+                    </button>
+                    <button
+                      type="button"
+                      className={isResolved ? "button-secondary" : "button-success"}
+                      disabled={isResolved}
+                      onClick={() => resolveIncident(incident.id)}
+                    >
+                      {isResolved ? "Resolved" : "Resolve"}
+                    </button>
+                  </div>
                 </div>
+              </article>
+            );
+          })}
 
-                <StatusBadge status={incident.status} />
-              </div>
-
-              <div style={{ marginTop: "8px", fontSize: "14px" }}>
-                <div>Location: {incident.location}</div>
-                <div>Time: {formatTime(incident)}</div>
-                <div>Confidence: {incident.confidence}%</div>
-              </div>
-
-              <div
-                style={{
-                  borderTop: "1px solid var(--border)",
-                  marginTop: "10px",
-                  paddingTop: "8px",
-                  color: "var(--muted)",
-                  fontSize: "13px",
-                  lineHeight: 1.35,
-                }}
-              >
-                AI explanation summary: {getAiSummary(incident)}
-              </div>
-
-              <div
-                style={{
-                  borderTop: "1px solid var(--border)",
-                  marginTop: "10px",
-                  paddingTop: "8px",
-                  display: "flex",
-                  gap: "8px",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setSelectedIncident(incident)}
-                  style={{
-                    padding: "6px 10px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--accent)",
-                    background: "transparent",
-                    color: "var(--text)",
-                    cursor: "pointer",
-                  }}
-                >
-                  View Details
-                </button>
-                <button
-                  type="button"
-                  disabled={isResolved}
-                  onClick={() => resolveIncident(incident.id)}
-                  style={{
-                    padding: "6px 10px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--success)",
-                    background: isResolved ? "var(--surface-strong)" : "var(--success)",
-                    color: isResolved ? "var(--muted)" : "#08100a",
-                    cursor: isResolved ? "not-allowed" : "pointer",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Resolve
-                </button>
-              </div>
+          {filteredIncidents.length === 0 && (
+            <div
+              className="panel-section panel-section--dashed"
+              style={{ color: "var(--muted)", textAlign: "center" }}
+            >
+              No incidents match your filters.
             </div>
-          );
-        })}
-
-        {filteredIncidents.length === 0 && (
-          <div
-            style={{
-              border: "1px dashed var(--border)",
-              borderRadius: "8px",
-              padding: "14px",
-              color: "var(--muted)",
-              textAlign: "center",
-            }}
-          >
-            No incidents match your filters.
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </Card>
   );

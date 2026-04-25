@@ -40,6 +40,13 @@ const getConfidenceBinIndex = (confidence) => {
   return 4;
 };
 
+const chartPanelStyle = {
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius-sm)",
+  padding: "14px",
+  background: "linear-gradient(180deg, var(--surface-raised), var(--surface))",
+};
+
 const AIInsights = () => {
   const { incidents, selectedIncident, theme } = useApp();
   const chartTickColor = theme === "dark" ? "#9aa4b2" : "#5f7187";
@@ -57,6 +64,12 @@ const AIInsights = () => {
     const unresolvedCount = incidents.filter(
       (incident) => incident.status !== "RESOLVED",
     ).length;
+    const averageConfidence =
+      total === 0
+        ? 0
+        : Math.round(
+            incidents.reduce((sum, incident) => sum + (incident.confidence || 0), 0) / total,
+          );
 
     const confidenceBins = [0, 0, 0, 0, 0];
     incidents.forEach((incident) => {
@@ -79,6 +92,7 @@ const AIInsights = () => {
       total,
       highCount,
       unresolvedCount,
+      averageConfidence,
       confidenceBins,
       cumulativePercentages,
     };
@@ -94,9 +108,9 @@ const AIInsights = () => {
         {
           label: "Count",
           data,
-          backgroundColor: ["#ff4d4f", "#4cd964", "#5f7187", "#ffd60a", "#4da3ff"],
-          borderRadius: 6,
-          maxBarThickness: 24,
+          backgroundColor: ["#ff5a5a", "#4cd964", "#8fb8ff", "#ffd60a", "#4da3ff"],
+          borderRadius: 8,
+          maxBarThickness: 26,
         },
       ],
     };
@@ -110,8 +124,8 @@ const AIInsights = () => {
           label: "Incidents",
           data: analytics.confidenceBins,
           backgroundColor: "#4da3ff",
-          borderRadius: 6,
-          maxBarThickness: 28,
+          borderRadius: 8,
+          maxBarThickness: 32,
         },
       ],
     }),
@@ -126,10 +140,11 @@ const AIInsights = () => {
           label: "Cumulative %",
           data: analytics.cumulativePercentages,
           borderColor: "#6ddc8a",
-          backgroundColor: "rgba(109,220,138,0.2)",
-          tension: 0.3,
+          backgroundColor: "rgba(109,220,138,0.16)",
+          tension: 0.32,
           fill: true,
-          pointRadius: 3,
+          pointRadius: 4,
+          pointBackgroundColor: "#6ddc8a",
         },
       ],
     }),
@@ -141,7 +156,8 @@ const AIInsights = () => {
       return null;
     }
 
-    const confidenceFactor = Math.min(Math.max(selectedIncident.confidence || 0, 0), 100) / 100;
+    const confidenceFactor =
+      Math.min(Math.max(selectedIncident.confidence || 0, 0), 100) / 100;
     const priorityFactor = PRIORITY_WEIGHT[selectedIncident.priority] || 0.45;
     return Math.round((confidenceFactor * 0.55 + priorityFactor * 0.45) * 100);
   }, [selectedIncident]);
@@ -164,54 +180,130 @@ const AIInsights = () => {
   };
 
   return (
-    <Card title="AI Insights & Analytics">
-      <div style={{ display: "grid", gap: "12px" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "8px",
-          }}
-        >
-          <div style={{ border: "1px solid var(--border)", borderRadius: "8px", padding: "8px" }}>
-            <div style={{ color: "var(--muted)", fontSize: "12px" }}>Total Incidents</div>
-            <strong>{analytics.total}</strong>
+    <Card
+      title="AI Insights & Analytics"
+      subtitle="Operational signals and model confidence, shaped for quick interpretation."
+    >
+      <div className="stack-lg">
+        <div className="metric-grid metric-grid--four">
+          <div className="metric-tile">
+            <div className="metric-tile__label">Total Incidents</div>
+            <div className="metric-tile__value">{analytics.total}</div>
+            <div className="metric-tile__meta">Combined active and historical session load</div>
           </div>
-          <div style={{ border: "1px solid var(--border)", borderRadius: "8px", padding: "8px" }}>
-            <div style={{ color: "var(--muted)", fontSize: "12px" }}>High Priority</div>
-            <strong>{analytics.highCount}</strong>
+          <div className="metric-tile">
+            <div className="metric-tile__label">High Priority</div>
+            <div className="metric-tile__value">{analytics.highCount}</div>
+            <div className="metric-tile__meta">Events marked high urgency by response logic</div>
           </div>
-          <div style={{ border: "1px solid var(--border)", borderRadius: "8px", padding: "8px" }}>
-            <div style={{ color: "var(--muted)", fontSize: "12px" }}>Unresolved</div>
-            <strong>{analytics.unresolvedCount}</strong>
+          <div className="metric-tile">
+            <div className="metric-tile__label">Unresolved</div>
+            <div className="metric-tile__value">{analytics.unresolvedCount}</div>
+            <div className="metric-tile__meta">Cases still open in the operating queue</div>
+          </div>
+          <div className="metric-tile">
+            <div className="metric-tile__label">Avg Confidence</div>
+            <div className="metric-tile__value">{analytics.averageConfidence}%</div>
+            <div className="metric-tile__meta">Mean model certainty across incidents</div>
           </div>
         </div>
 
         {selectedIncident ? (
-          <div style={{ border: "1px solid var(--border)", borderRadius: "8px", padding: "10px" }}>
-            <div style={{ color: "var(--muted)", fontSize: "12px" }}>Selected Incident Risk</div>
-            <div style={{ marginTop: "4px" }}>
-              <strong>{selectedIncident.type}</strong> at {selectedIncident.location}
-            </div>
-            <div style={{ marginTop: "4px" }}>
-              Failure Probability: <strong>{riskScore}%</strong>
-            </div>
-            
-            {/* --- UPDATED: Dynamic LLM Explanation --- */}
-            <div style={{ color: "var(--muted)", fontSize: "12px", marginTop: "4px" }}>
-              Prediction summary: <strong>{selectedIncident.llm_explanation || "Elevated risk if response is delayed; continue real-time monitoring."}</strong>
+          <div
+            className="panel-section panel-section--tinted stack-md"
+            style={{ borderColor: "var(--border-strong)" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: "12px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div className="stack-sm">
+                <div className="eyebrow">Selected Incident Risk</div>
+                <h3 style={{ fontSize: "1.8rem" }}>
+                  {selectedIncident.type} at {selectedIncident.location}
+                </h3>
+              </div>
+              <div className="soft-pill">
+                Risk Estimate <strong>{riskScore}%</strong>
+              </div>
             </div>
 
-            {/* --- UPDATED: Dynamic Recommended Action --- */}
-            {selectedIncident.decision?.recommended_action && (
-              <div style={{ color: "#55c7ff", fontSize: "12px", marginTop: "6px", borderTop: "1px solid var(--border)", paddingTop: "4px" }}>
-                Action: {selectedIncident.decision.recommended_action}
+            <div
+              style={{
+                height: "12px",
+                borderRadius: "999px",
+                background: "var(--surface-strong)",
+                overflow: "hidden",
+                border: "1px solid var(--border)",
+              }}
+            >
+              <div
+                style={{
+                  width: `${riskScore}%`,
+                  height: "100%",
+                  background:
+                    riskScore >= 80
+                      ? "linear-gradient(90deg, #ff8b6f, #ff5a5a)"
+                      : riskScore >= 55
+                        ? "linear-gradient(90deg, #ffd166, #ffb020)"
+                        : "linear-gradient(90deg, #6ddc8a, #2f9e5f)",
+                }}
+              />
+            </div>
+
+            <div className="metric-grid metric-grid--three">
+              <div style={chartPanelStyle}>
+                <div className="metric-tile__label">Failure Probability</div>
+                <div className="metric-tile__value" style={{ fontSize: "1.3rem" }}>
+                  {riskScore}%
+                </div>
               </div>
-            )}
-            
+              <div style={chartPanelStyle}>
+                <div className="metric-tile__label">Confidence</div>
+                <div className="metric-tile__value" style={{ fontSize: "1.3rem" }}>
+                  {selectedIncident.confidence}%
+                </div>
+              </div>
+              <div style={chartPanelStyle}>
+                <div className="metric-tile__label">Priority</div>
+                <div className="metric-tile__value" style={{ fontSize: "1.3rem" }}>
+                  {selectedIncident.priority}
+                </div>
+              </div>
+            </div>
+
+            <div style={chartPanelStyle}>
+              <div className="metric-tile__label" style={{ marginBottom: "8px" }}>
+                Prediction Summary
+              </div>
+              <div style={{ color: "var(--muted)", lineHeight: 1.6 }}>
+                <strong style={{ color: "var(--text)" }}>
+                  {selectedIncident.llm_explanation ||
+                    "Elevated risk if response is delayed; continue real-time monitoring."}
+                </strong>
+              </div>
+
+              {selectedIncident.decision?.recommended_action && (
+                <div
+                  style={{
+                    marginTop: "12px",
+                    paddingTop: "12px",
+                    borderTop: "1px solid var(--border)",
+                    color: "var(--accent-strong)",
+                  }}
+                >
+                  Action: {selectedIncident.decision.recommended_action}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
-          <div style={{ color: "var(--muted)", fontSize: "13px" }}>
+          <div className="panel-section panel-section--dashed" style={{ color: "var(--muted)" }}>
             Select an incident to view predictive risk details.
           </div>
         )}
@@ -220,32 +312,32 @@ const AIInsights = () => {
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "10px",
+            gap: "12px",
           }}
         >
-          <div style={{ border: "1px solid var(--border)", borderRadius: "8px", padding: "10px" }}>
-            <div style={{ marginBottom: "8px", fontSize: "13px", color: "var(--muted)" }}>
-              Type Mini-Bar
+          <div style={chartPanelStyle}>
+            <div style={{ marginBottom: "10px" }} className="metric-tile__label">
+              Type Distribution
             </div>
-            <div style={{ height: "150px" }}>
+            <div style={{ height: "220px" }}>
               <Bar data={typeBarData} options={baseBarOptions} />
             </div>
           </div>
 
-          <div style={{ border: "1px solid var(--border)", borderRadius: "8px", padding: "10px" }}>
-            <div style={{ marginBottom: "8px", fontSize: "13px", color: "var(--muted)" }}>
+          <div style={chartPanelStyle}>
+            <div style={{ marginBottom: "10px" }} className="metric-tile__label">
               Confidence Histogram
             </div>
-            <div style={{ height: "150px" }}>
+            <div style={{ height: "220px" }}>
               <Bar data={histogramData} options={baseBarOptions} />
             </div>
           </div>
 
-          <div style={{ border: "1px solid var(--border)", borderRadius: "8px", padding: "10px" }}>
-            <div style={{ marginBottom: "8px", fontSize: "13px", color: "var(--muted)" }}>
-              Ogive (Cumulative)
+          <div style={chartPanelStyle}>
+            <div style={{ marginBottom: "10px" }} className="metric-tile__label">
+              Cumulative Confidence
             </div>
-            <div style={{ height: "150px" }}>
+            <div style={{ height: "220px" }}>
               <Line
                 data={ogiveData}
                 options={{

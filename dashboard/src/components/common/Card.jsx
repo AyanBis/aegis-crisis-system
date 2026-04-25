@@ -1,22 +1,21 @@
-const Card = ({ title, children }) => {
+const Card = ({ title, subtitle, actions, children, className = "", contentStyle }) => {
+  const cardClassName = ["panel-card", className].filter(Boolean).join(" ");
+
   return (
-    <div
-      style={{
-        background: "var(--card)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius)",
-        padding: "16px",
-        height: "100%",
-        boxShadow: "var(--shadow)",
-      }}
-    >
-      {title && (
-        <h4 style={{ marginBottom: "10px", color: "var(--muted)" }}>
-          {title}
-        </h4>
+    <section className={cardClassName} style={{ height: "100%" }}>
+      {(title || subtitle || actions) && (
+        <div className="panel-card__header">
+          <div>
+            {title && <h4 className="panel-card__title">{title}</h4>}
+            {subtitle && <div className="panel-card__subtitle">{subtitle}</div>}
+          </div>
+          {actions && <div>{actions}</div>}
+        </div>
       )}
-      {children}
-    </div>
+      <div className="panel-card__content" style={contentStyle}>
+        {children}
+      </div>
+    </section>
   );
 };
 

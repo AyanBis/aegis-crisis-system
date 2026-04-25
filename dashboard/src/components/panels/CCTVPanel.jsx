@@ -8,7 +8,7 @@ const CCTVPanel = () => {
   const canvasRef = useRef(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [status, setStatus] = useState("Camera Off");
-  const [aiLog, setAiLog] = useState("Awaiting AI Analysis..."); 
+  const [aiLog, setAiLog] = useState("Awaiting AI analysis...");
 
   useEffect(() => {
     let activeStream = null;
@@ -17,15 +17,15 @@ const CCTVPanel = () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         activeStream = stream;
-        
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          videoRef.current.play().catch(e => console.error("Video play error:", e));
-          setStatus("Camera Active - Standby");
+          videoRef.current.play().catch((error) => console.error("Video play error:", error));
+          setStatus("Camera active / standby");
         }
       } catch (error) {
         console.error("Error accessing webcam:", error);
-        setStatus("Camera Error (Check Permissions)");
+        setStatus("Camera error / check permissions");
       }
     };
 
@@ -41,15 +41,14 @@ const CCTVPanel = () => {
   useEffect(() => {
     let interval;
     if (isMonitoring) {
-      setStatus("Monitoring... Analyzing frames");
+      setStatus("Monitoring / analyzing frames");
       setAiLog("Streaming frames to vision engine...");
-      // Auto-fetch loop: Capture a frame every 5 seconds
-      interval = setInterval(captureAndSendFrame, 5000); 
+      interval = setInterval(captureAndSendFrame, 5000);
     } else {
       if (videoRef.current?.srcObject) {
-        setStatus("Camera Active - Standby");
+        setStatus("Camera active / standby");
       }
-      setAiLog("AI Monitoring Paused");
+      setAiLog("AI monitoring paused");
     }
     return () => clearInterval(interval);
   }, [isMonitoring]);
@@ -69,70 +68,130 @@ const CCTVPanel = () => {
       if (!blob) return;
 
       const formData = new FormData();
-      // MUST be named "frame" for your backend!
-      formData.append("frame", blob, "cctv_frame.jpg"); 
+      formData.append("frame", blob, "cctv_frame.jpg");
 
       try {
-        const res = await fetch(`${API_BASE_URL}/cctv-frame`, {
+        const response = await fetch(`${API_BASE_URL}/cctv-frame`, {
           method: "POST",
           body: formData,
         });
-        
-        if (!res.ok) throw new Error(`Server returned ${res.status}`);
-        
-        const data = await res.json();
-        
+
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+
+        const data = await response.json();
+
         const detectedItems = data.detections || data.objects || [];
         if (detectedItems.length > 0) {
-          setAiLog(`⚠️ Detected: ${detectedItems.join(", ")}`);
-        } else if (data.crisis_type && data.crisis_type !== "None" && data.crisis_type !== "unknown") {
-          setAiLog(`⚠️ Alert: ${String(data.crisis_type).toUpperCase()} DETECTED!`);
+          setAiLog(`Alert: detected ${detectedItems.join(", ")}`);
+        } else if (
+          data.crisis_type &&
+          data.crisis_type !== "None" &&
+          data.crisis_type !== "unknown"
+        ) {
+          setAiLog(`Alert: ${String(data.crisis_type).toUpperCase()} detected`);
         } else {
-          setAiLog("✅ Scene Clear (No threats detected)");
+          setAiLog("Scene clear / no threats detected");
         }
       } catch (error) {
         console.error("CCTV feed error:", error);
-        setAiLog("❌ Backend Connection Error");
+        setAiLog("Backend connection error");
       }
     }, "image/jpeg");
   };
 
+  const isAlert = aiLog.toLowerCase().includes("alert");
+  const isClear = aiLog.toLowerCase().includes("scene clear");
+
   return (
-    <Card title="Live CCTV Feed (Webcam)">
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        <div style={{ position: "relative", width: "100%", minHeight: "220px", borderRadius: "8px", overflow: "hidden", background: "#000" }}>
-          <video 
-            ref={videoRef} 
-            autoPlay 
-            playsInline 
-            muted 
-            onLoadedMetadata={() => videoRef.current?.play()}
-            style={{ width: "100%", minHeight: "220px", objectFit: "cover", display: "block", transform: "scaleX(-1)" }} 
-          />
-          <div style={{ position: "absolute", top: "10px", left: "10px", background: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: "4px", fontSize: "12px", color: isMonitoring ? "#ff4d4f" : "#fff" }}>
-            {isMonitoring ? "● REC (AI ON)" : "LIVE"}
-          </div>
-        </div>
-        
-        <div style={{ fontSize: "12px", color: "var(--muted)" }}>Status: {status}</div>
-
-        <div style={{
-          padding: "8px 12px", borderRadius: "6px", background: "var(--surface-strong)", border: "1px dashed var(--border)",
-          fontSize: "13px", fontWeight: "bold", textAlign: "center",
-          color: aiLog.includes("⚠️") ? "#ff4d4f" : aiLog.includes("✅") ? "#4cd964" : "var(--text)"
-        }}>
-          {aiLog}
-        </div>
-
-        <button
-          onClick={() => setIsMonitoring(!isMonitoring)}
+    <Card
+      title="Live CCTV Feed"
+      subtitle="Browser webcam monitoring, styled without changing the frame-analysis path."
+    >
+      <div className="stack-lg">
+        <div
           style={{
-            padding: "8px", background: isMonitoring ? "transparent" : "var(--accent)", border: isMonitoring ? "1px solid #ff4d4f" : "none",
-            color: isMonitoring ? "#ff4d4f" : "#fff", borderRadius: "6px", cursor: "pointer", fontWeight: "bold"
+            position: "relative",
+            width: "100%",
+            minHeight: "280px",
+            borderRadius: "var(--radius)",
+            overflow: "hidden",
+            background: "#050b14",
+            border: "1px solid var(--border)",
           }}
         >
-          {isMonitoring ? "Stop AI Monitoring" : "Start AI Monitoring"}
-        </button>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            onLoadedMetadata={() => videoRef.current?.play()}
+            style={{
+              width: "100%",
+              minHeight: "280px",
+              objectFit: "cover",
+              display: "block",
+              transform: "scaleX(-1)",
+            }}
+          />
+
+          <div
+            className="soft-pill"
+            style={{
+              position: "absolute",
+              top: "12px",
+              left: "12px",
+              background: "rgba(5, 11, 20, 0.72)",
+              color: isMonitoring ? "#ff8b8b" : "#f5f7fb",
+              borderColor: "rgba(255, 255, 255, 0.12)",
+            }}
+          >
+            <span
+              className="status-dot"
+              style={{ background: isMonitoring ? "var(--danger)" : "var(--success)" }}
+            />
+            {isMonitoring ? "REC / AI ON" : "LIVE"}
+          </div>
+        </div>
+
+        <div className="panel-section panel-section--tinted stack-md">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "10px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div className="soft-pill">
+              <span className="status-dot" style={{ background: "var(--accent)" }} />
+              Status <strong>{status}</strong>
+            </div>
+
+            <button
+              type="button"
+              className={isMonitoring ? "button-danger" : "button-primary"}
+              onClick={() => setIsMonitoring((prev) => !prev)}
+            >
+              {isMonitoring ? "Stop AI Monitoring" : "Start AI Monitoring"}
+            </button>
+          </div>
+
+          <div
+            style={{
+              padding: "12px 14px",
+              borderRadius: "var(--radius-sm)",
+              background: "var(--surface-raised)",
+              border: "1px dashed var(--border)",
+              fontSize: "13px",
+              fontWeight: 600,
+              color: isAlert ? "var(--danger)" : isClear ? "var(--success)" : "var(--text)",
+            }}
+          >
+            {aiLog}
+          </div>
+        </div>
+
         <canvas ref={canvasRef} style={{ display: "none" }} />
       </div>
     </Card>
@@ -140,4 +199,3 @@ const CCTVPanel = () => {
 };
 
 export default CCTVPanel;
-//cctv implemented successfully with webcam access, AI monitoring toggle, and real-time status updates. The component captures frames every 5 seconds when monitoring is active and sends them to the backend for analysis, displaying results in a user-friendly format.

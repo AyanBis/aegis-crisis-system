@@ -8,12 +8,34 @@ const THEME_STORAGE_KEY = "aegis-theme";
 const API_BASE_URL = "http://127.0.0.1:8000"; 
 const MAX_LOG_ENTRIES = 40;
 
+const normalizeStatus = (status) => {
+  const normalized = String(status || "ACTIVE").trim().toUpperCase();
+
+  if (normalized === "IN PROGRESS") {
+    return "IN_PROGRESS";
+  }
+
+  if (normalized === "RESOLVED" || normalized === "IN_PROGRESS" || normalized === "ACTIVE") {
+    return normalized;
+  }
+
+  return "ACTIVE";
+};
+
+const normalizePriority = (priority) => {
+  const normalized = String(priority || "MEDIUM").trim().toUpperCase();
+  if (normalized === "HIGH" || normalized === "MEDIUM" || normalized === "LOW") {
+    return normalized;
+  }
+  return "MEDIUM";
+};
+
 const normalizeIncident = (incident) => ({
   id: incident.id ?? Date.now(),
   type: incident.type || "General",
   location: incident.location || "Unknown",
-  priority: incident.priority || "MEDIUM",
-  status: incident.status || "ACTIVE",
+  priority: normalizePriority(incident.priority),
+  status: normalizeStatus(incident.status),
   confidence: typeof incident.confidence === "number" ? incident.confidence : 75,
   timestamp: incident.timestamp || "just now",
   createdAt: incident.createdAt || new Date().toISOString(),
@@ -136,6 +158,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const setIncidentStatus = (incidentId, status) => {
+    const nextStatus = normalizeStatus(status);
     let updatedIncident = null;
 
     setIncidents((prev) =>
@@ -146,8 +169,8 @@ export const AppProvider = ({ children }) => {
 
         updatedIncident = {
           ...incident,
-          status,
-          resolvedAt: status === "RESOLVED" ? new Date().toISOString() : null,
+          status: nextStatus,
+          resolvedAt: nextStatus === "RESOLVED" ? new Date().toISOString() : null,
         };
 
         return updatedIncident;
@@ -158,16 +181,16 @@ export const AppProvider = ({ children }) => {
       prev?.id === incidentId
         ? {
             ...prev,
-            status,
-            resolvedAt: status === "RESOLVED" ? new Date().toISOString() : null,
+            status: nextStatus,
+            resolvedAt: nextStatus === "RESOLVED" ? new Date().toISOString() : null,
           }
         : prev,
     );
 
     if (updatedIncident) {
-      const level = status === "RESOLVED" ? "success" : "info";
+      const level = nextStatus === "RESOLVED" ? "success" : "info";
       appendLog(
-        `Incident ${updatedIncident.id} set to ${status} (${updatedIncident.type})`,
+        `Incident ${updatedIncident.id} set to ${nextStatus} (${updatedIncident.type})`,
         level,
       );
     }

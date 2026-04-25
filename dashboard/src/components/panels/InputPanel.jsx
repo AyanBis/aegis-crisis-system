@@ -1,14 +1,28 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import Card from "../common/Card";
 import { useApp } from "../../context/AppContext";
+
+const labelStyle = {
+  fontSize: "12px",
+  color: "var(--muted)",
+  display: "block",
+  marginBottom: "6px",
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+};
+
+const uploadCardStyle = {
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius-sm)",
+  padding: "12px",
+  background: "linear-gradient(180deg, var(--surface-raised), var(--surface))",
+};
 
 const InputPanel = () => {
   const { addIncident } = useApp();
   const [form, setForm] = useState({ text: "", location: "" });
   const [imageFile, setImageFile] = useState(null);
   const [audioFile, setAudioFile] = useState(null);
-
-  // --- NEW: Audio Recording States ---
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -29,12 +43,11 @@ const InputPanel = () => {
 
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        // Create a File object from the Blob to send to the backend
-        const file = new File([audioBlob], "live_recording.webm", { type: "audio/webm" });
+        const file = new File([audioBlob], "live_recording.webm", {
+          type: "audio/webm",
+        });
         setAudioFile(file);
-        
-        // Stop the microphone tracks
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       };
 
       mediaRecorder.start();
@@ -74,55 +87,108 @@ const InputPanel = () => {
   };
 
   return (
-    <Card title="Manual Incident Report">
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: "12px" }}>
-        
-        <textarea
-          value={form.text}
-          placeholder="Describe the situation..."
-          rows="3"
-          onChange={(e) => setForm((prev) => ({ ...prev, text: e.target.value }))}
-          style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", resize: "none" }}
-        />
-
-        <input
-          type="text"
-          value={form.location}
-          placeholder="Location (e.g. Room 204)"
-          onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
-          style={{ padding: "8px", borderRadius: "6px", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)" }}
-        />
-
-        {/* FILE & AUDIO UPLOADS */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+    <Card
+      title="Manual Incident Report"
+      subtitle="Submit multimodal reports without changing the AI ingestion path."
+    >
+      <form onSubmit={onSubmit} className="stack-lg">
+        <div className="panel-section panel-section--tinted stack-md">
           <div>
-            <label style={{ fontSize: "12px", color: "var(--muted)", display: "block", marginBottom: "4px" }}>Image</label>
-            <input type="file" accept="image/*" ref={imageInputRef} onChange={(e) => setImageFile(e.target.files[0])} style={{ fontSize: "12px", width: "100%" }} />
+            <label style={labelStyle}>Situation Summary</label>
+            <textarea
+              value={form.text}
+              placeholder="Describe the situation, hazard signs, or operator notes..."
+              rows="5"
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, text: event.target.value }))
+              }
+              style={{ resize: "none" }}
+            />
           </div>
+
           <div>
-            <label style={{ fontSize: "12px", color: "var(--muted)", display: "block", marginBottom: "4px" }}>Audio File</label>
-            <input type="file" accept="audio/*" ref={audioInputRef} onChange={(e) => setAudioFile(e.target.files[0])} style={{ fontSize: "12px", width: "100%" }} />
+            <label style={labelStyle}>Location</label>
+            <input
+              type="text"
+              value={form.location}
+              placeholder="Location (for example: Room 204)"
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, location: event.target.value }))
+              }
+            />
           </div>
         </div>
 
-        {/* LIVE AUDIO RECORDING CONTROLS */}
-        <div style={{ display: "flex", gap: "10px", alignItems: "center", borderTop: "1px dashed var(--border)", paddingTop: "10px" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "12px",
+          }}
+        >
+          <div style={uploadCardStyle}>
+            <label style={labelStyle}>Image Upload</label>
+            <input
+              type="file"
+              accept="image/*"
+              ref={imageInputRef}
+              onChange={(event) => setImageFile(event.target.files?.[0] || null)}
+            />
+            <div style={{ color: "var(--muted)", fontSize: "12px", marginTop: "8px" }}>
+              {imageFile ? imageFile.name : "Attach a still image for visual analysis."}
+            </div>
+          </div>
+
+          <div style={uploadCardStyle}>
+            <label style={labelStyle}>Audio Upload</label>
+            <input
+              type="file"
+              accept="audio/*"
+              ref={audioInputRef}
+              onChange={(event) => setAudioFile(event.target.files?.[0] || null)}
+            />
+            <div style={{ color: "var(--muted)", fontSize: "12px", marginTop: "8px" }}>
+              {audioFile ? audioFile.name : "Attach an audio sample or spoken operator note."}
+            </div>
+          </div>
+        </div>
+
+        <div className="panel-section panel-section--dashed stack-md">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: "10px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <div className="metric-tile__label">Live Audio Capture</div>
+              <div style={{ color: "var(--muted)", marginTop: "4px" }}>
+                Record directly from the browser when file upload is not available.
+              </div>
+            </div>
+            {audioFile && (
+              <div className="soft-pill">
+                <span className="status-dot" style={{ background: "var(--success)" }} />
+                Audio ready
+              </div>
+            )}
+          </div>
+
           {!isRecording ? (
-            <button type="button" onClick={startRecording} style={{ flex: 1, padding: "8px", background: "var(--surface-strong)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: "6px", cursor: "pointer" }}>
-              🎤 Start Live Recording
+            <button type="button" className="button-secondary" onClick={startRecording}>
+              Start Live Recording
             </button>
           ) : (
-            <button type="button" onClick={stopRecording} style={{ flex: 1, padding: "8px", background: "rgba(255, 77, 79, 0.2)", border: "1px solid #ff4d4f", color: "#ff4d4f", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
-              ⏹ Stop Recording (Listening...)
+            <button type="button" className="button-danger" onClick={stopRecording}>
+              Stop Recording
             </button>
           )}
-          {audioFile && <span style={{ fontSize: "12px", color: "#4cd964" }}>✅ Audio Ready</span>}
         </div>
 
-        <button
-          type="submit"
-          style={{ padding: "10px", borderRadius: "8px", border: "none", background: "var(--accent)", color: "#fff", cursor: "pointer", fontWeight: "bold", marginTop: "4px" }}
-        >
+        <button type="submit" className="button-primary">
           Send to AI Engine
         </button>
       </form>

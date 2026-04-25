@@ -11,47 +11,26 @@ import CCTVPanel from "../panels/CCTVPanel";
 
 const MainLayout = () => {
   return (
-    <div className="container">
+    <div className="container app-shell">
       <Header />
 
-      {/* TOP GRID */}
-      <div
-        className="grid"
-        style={{
-          gridTemplateColumns: "1fr 1.8fr 1.35fr",
-          marginTop: "16px",
-        }}
-      >
-        <IncidentFeed />
-        {/* Swapped: AI Insights is now in the top row */}
-        <AIInsights /> 
-        <DigitalTwin />
-      </div>
+      <div className="dashboard-main">
+        <div className="dashboard-column dashboard-column--left">
+          <IncidentFeed />
+          <AlertsFeed />
+          <ExecutionLog />
+        </div>
 
-      {/* MIDDLE GRID */}
-      <div
-        className="grid"
-        style={{
-          gridTemplateColumns: "1fr 2fr",
-          marginTop: "16px",
-        }}
-      >
-        <AlertsFeed />
-        {/* Swapped: Decision Panel is now in the middle row */}
-        <DecisionPanel /> 
-      </div>
+        <div className="dashboard-column dashboard-column--center">
+          <AIInsights />
+          <DecisionPanel />
+          <InputPanel />
+        </div>
 
-      {/* BOTTOM GRID */}
-      <div
-        className="grid"
-        style={{
-          gridTemplateColumns: "1.5fr 1fr 1fr",
-          marginTop: "16px",
-        }}
-      >
-        <ExecutionLog />
-        <InputPanel />
-        <CCTVPanel />
+        <div className="dashboard-column dashboard-column--right">
+          <DigitalTwin />
+          <CCTVPanel />
+        </div>
       </div>
     </div>
   );

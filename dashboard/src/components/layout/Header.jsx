@@ -44,83 +44,116 @@ const Header = () => {
   const isLight = theme === "light";
 
   return (
-    <div
+    <header
+      className="panel-card"
       style={{
+        padding: "12px 16px",
         background: "var(--card)",
-        padding: "14px 20px",
-        borderRadius: "var(--radius)",
-        border: "1px solid var(--border)",
-        boxShadow: "var(--shadow)",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
       }}
     >
-      <h3>Aegis</h3>
-
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <div style={{ color: "var(--muted)" }}>
-          Temp: 78°C | Load: 65% | Network: Stable
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "14px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+          }}
+        >
+          <h1 style={{ fontSize: "1.35rem", lineHeight: 1, margin: 0 }}>Aegis</h1>
         </div>
 
-        <button
-          type="button"
-          onClick={toggleTheme}
+        <div
           style={{
-            border: "1px solid var(--border)",
-            background: "var(--surface)",
-            borderRadius: "999px",
-            padding: "4px",
-            cursor: "pointer",
-            boxShadow: "var(--shadow-soft)",
-            width: "78px",
-            height: "42px",
-            position: "relative",
-            display: "inline-flex",
+            display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
-            transition: "background 0.25s ease, border-color 0.25s ease",
+            gap: "10px",
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
           }}
-          aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
-          title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
         >
-          <span
-            aria-hidden="true"
+          <div className="soft-pill">
+            Temp <strong>78C</strong>
+          </div>
+          <div className="soft-pill">
+            Load <strong>65%</strong>
+          </div>
+          <div className="soft-pill">
+            Network <strong>Stable</strong>
+          </div>
+
+          <button
+            type="button"
+            onClick={toggleTheme}
             style={{
-              width: "100%",
-              display: "flex",
+              border: "1px solid var(--border)",
+              background: "var(--surface-strong)",
+              borderRadius: "999px",
+              padding: "4px",
+              cursor: "pointer",
+              boxShadow: "var(--shadow-soft)",
+              width: "78px",
+              height: "40px",
+              position: "relative",
+              display: "inline-flex",
               alignItems: "center",
               justifyContent: "space-between",
-              padding: "0 8px",
-              position: "relative",
+              transition: "background 0.25s ease, border-color 0.25s ease",
             }}
+            aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+            title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
           >
             <span
+              aria-hidden="true"
               style={{
-                position: "absolute",
-                top: "50%",
-                left: isLight ? "4px" : "calc(100% - 34px)",
-                transform: "translateY(-50%)",
-                width: "30px",
-                height: "30px",
-                borderRadius: "50%",
-                background: isLight ? "rgba(246, 196, 83, 0.18)" : "rgba(143, 184, 255, 0.2)",
-                border: `1px solid ${isLight ? "rgba(246, 196, 83, 0.35)" : "rgba(143, 184, 255, 0.35)"}`,
-                boxShadow: "var(--shadow-soft)",
+                width: "100%",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                transition: "left 0.25s ease, background 0.25s ease, border-color 0.25s ease",
+                justifyContent: "space-between",
+                padding: "0 8px",
+                position: "relative",
               }}
             >
-              {isLight ? <SunIcon active /> : <MoonIcon active />}
+              <span
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: isLight ? "4px" : "calc(100% - 34px)",
+                  transform: "translateY(-50%)",
+                  width: "30px",
+                  height: "30px",
+                  borderRadius: "50%",
+                  background: isLight
+                    ? "rgba(246, 196, 83, 0.18)"
+                    : "rgba(143, 184, 255, 0.2)",
+                  border: `1px solid ${
+                    isLight
+                      ? "rgba(246, 196, 83, 0.35)"
+                      : "rgba(143, 184, 255, 0.35)"
+                  }`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition:
+                    "left 0.25s ease, background 0.25s ease, border-color 0.25s ease",
+                }}
+              >
+                {isLight ? <SunIcon active /> : <MoonIcon active />}
+              </span>
+              <SunIcon active={isLight} />
+              <MoonIcon active={!isLight} />
             </span>
-            <SunIcon active={isLight} />
-            <MoonIcon active={!isLight} />
-          </span>
-        </button>
+          </button>
+        </div>
       </div>
-    </div>
+    </header>
   );
 };
 
