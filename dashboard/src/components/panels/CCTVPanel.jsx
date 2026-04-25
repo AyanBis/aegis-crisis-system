@@ -140,4 +140,4 @@ const CCTVPanel = () => {
 };
 
 export default CCTVPanel;
-
+//cctv implemented successfully with webcam access, AI monitoring toggle, and real-time status updates. The component captures frames every 5 seconds when monitoring is active and sends them to the backend for analysis, displaying results in a user-friendly format.
