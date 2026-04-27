@@ -64,6 +64,8 @@ temp_*
 # ML MODELS (CRITICAL)
 # =========================
 models/*.pkl
+!models/crisis_model.pkl
+!models/vectorizer.pkl
 models/*.h5
 models/*.pt
 

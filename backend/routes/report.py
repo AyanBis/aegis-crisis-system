@@ -18,8 +18,24 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 MODEL_PATH = os.path.join(BASE_DIR, "models", "crisis_model.pkl")
 VECTORIZER_PATH = os.path.join(BASE_DIR, "models", "vectorizer.pkl")
 
-model = joblib.load(MODEL_PATH)
-vectorizer = joblib.load(VECTORIZER_PATH)
+model = None
+vectorizer = None
+
+
+def get_text_model():
+    global model, vectorizer
+
+    if model is None or vectorizer is None:
+        if not os.path.exists(MODEL_PATH) or not os.path.exists(VECTORIZER_PATH):
+            raise RuntimeError(
+                "Text model files are missing. Add models/crisis_model.pkl and "
+                "models/vectorizer.pkl to the deployment."
+            )
+
+        model = joblib.load(MODEL_PATH)
+        vectorizer = joblib.load(VECTORIZER_PATH)
+
+    return model, vectorizer
 
 
 # -------------------------------
@@ -103,6 +119,7 @@ def report_incident(
             # -------------------------------
             # ML MODEL
             # -------------------------------
+            model, vectorizer = get_text_model()
             text_vec = vectorizer.transform([text_input])
             prediction = model.predict(text_vec)[0]
             confidence = float(max(model.predict_proba(text_vec)[0]))

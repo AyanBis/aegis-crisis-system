@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware  # 1. Import the middleware
 from backend.routes.report import router as report_router
 from backend.routes.cctv import router as cctv_router
 from backend.routes.incident import router as incident_router
+from utils.config import get_supabase_config_status
 
 app = FastAPI(title="Aegis Crisis API")
 
@@ -18,6 +19,14 @@ app.add_middleware(
 @app.get("/")
 def home():
     return {"message": "Aegis API Running"}
+
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "supabase": get_supabase_config_status(),
+    }
 
 # Include routes
 app.include_router(report_router)
