@@ -10,7 +10,7 @@ app = FastAPI(title="Aegis Crisis API")
 # 2. Add the CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows requests from any origin (perfect for local dev)
+    allow_origins=["https://creative-brioche-95c019.netlify.app/"],  # Allows requests from any origin (perfect for local dev)
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods (GET, POST, PUT, DELETE, etc.)
     allow_headers=["*"],  # Allows all headers

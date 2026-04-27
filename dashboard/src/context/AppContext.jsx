@@ -5,7 +5,7 @@ const AppContext = createContext();
 const THEME_STORAGE_KEY = "aegis-theme";
 
 // Added your Backend URL here
-const API_BASE_URL = "http://127.0.0.1:8000"; 
+const API_BASE_URL = "aegis-crisis-system-production.up.railway.app"; 
 const MAX_LOG_ENTRIES = 40;
 
 const normalizeStatus = (status) => {
