@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Card from "../common/Card";
 
-const API_BASE_URL = "aegis-crisis-system-production.up.railway.app";
+const API_BASE_URL = "https://aegis-crisis-system-production.up.railway.app";
 
 const CCTVPanel = () => {
   const videoRef = useRef(null);
