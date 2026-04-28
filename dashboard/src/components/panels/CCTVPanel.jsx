@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { API_BASE_URL } from "../../config/api";
 import Card from "../common/Card";
-
-const API_BASE_URL = "https://aegis-crisis-system-production.up.railway.app";
 
 const CCTVPanel = () => {
   const videoRef = useRef(null);
@@ -38,22 +37,7 @@ const CCTVPanel = () => {
     };
   }, []);
 
-  useEffect(() => {
-    let interval;
-    if (isMonitoring) {
-      setStatus("Monitoring / analyzing frames");
-      setAiLog("Streaming frames to vision engine...");
-      interval = setInterval(captureAndSendFrame, 5000);
-    } else {
-      if (videoRef.current?.srcObject) {
-        setStatus("Camera active / standby");
-      }
-      setAiLog("AI monitoring paused");
-    }
-    return () => clearInterval(interval);
-  }, [isMonitoring]);
-
-  const captureAndSendFrame = async () => {
+  const captureAndSendFrame = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
@@ -97,6 +81,30 @@ const CCTVPanel = () => {
         setAiLog("Backend connection error");
       }
     }, "image/jpeg");
+  }, []);
+
+  useEffect(() => {
+    if (!isMonitoring) return undefined;
+
+    const interval = setInterval(captureAndSendFrame, 5000);
+    return () => clearInterval(interval);
+  }, [captureAndSendFrame, isMonitoring]);
+
+  const handleMonitoringToggle = () => {
+    const nextMonitoringState = !isMonitoring;
+
+    setIsMonitoring(nextMonitoringState);
+
+    if (nextMonitoringState) {
+      setStatus("Monitoring / analyzing frames");
+      setAiLog("Streaming frames to vision engine...");
+      return;
+    }
+
+    if (videoRef.current?.srcObject) {
+      setStatus("Camera active / standby");
+    }
+    setAiLog("AI monitoring paused");
   };
 
   const isAlert = aiLog.toLowerCase().includes("alert");
@@ -171,7 +179,7 @@ const CCTVPanel = () => {
             <button
               type="button"
               className={isMonitoring ? "button-danger" : "button-primary"}
-              onClick={() => setIsMonitoring((prev) => !prev)}
+              onClick={handleMonitoringToggle}
             >
               {isMonitoring ? "Stop AI Monitoring" : "Start AI Monitoring"}
             </button>

@@ -1,11 +1,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { API_BASE_URL } from "../config/api";
 import { initialIncidents } from "../data/mockData";
 
 const AppContext = createContext();
 const THEME_STORAGE_KEY = "aegis-theme";
-
-// Added your Backend URL here
-const API_BASE_URL = "https://aegis-crisis-system-production.up.railway.app"; 
 const MAX_LOG_ENTRIES = 40;
 
 const normalizeStatus = (status) => {
@@ -127,6 +125,10 @@ export const AppProvider = ({ children }) => {
 
       // Receive the AI engine's decision
       const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
       // Normalize it so the dashboard UI understands it
       const newIncident = normalizeIncident({
