@@ -2,9 +2,48 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "../../config/api";
 import Card from "../common/Card";
 
+const detectVisibleBleeding = (canvas) => {
+  const context = canvas.getContext("2d");
+  const { width, height } = canvas;
+
+  if (!context || width === 0 || height === 0) {
+    return false;
+  }
+
+  const { data } = context.getImageData(0, 0, width, height);
+  const pixelStride = 16;
+  let sampledPixels = 0;
+  let redPixels = 0;
+  let darkRedPixels = 0;
+
+  for (let index = 0; index < data.length; index += 4 * pixelStride) {
+    const red = data[index];
+    const green = data[index + 1];
+    const blue = data[index + 2];
+
+    const redDominant =
+      red > 95 &&
+      red > green * 1.35 &&
+      red > blue * 1.2 &&
+      red - Math.max(green, blue) > 35;
+    const darkRed = red > 65 && green < 95 && blue < 95 && red > green * 1.18;
+
+    sampledPixels += 1;
+    if (redDominant) redPixels += 1;
+    if (darkRed) darkRedPixels += 1;
+  }
+
+  if (sampledPixels === 0) {
+    return false;
+  }
+
+  return redPixels / sampledPixels >= 0.025 || darkRedPixels / sampledPixels >= 0.035;
+};
+
 const CCTVPanel = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const lastVisualAlertRef = useRef(0);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [status, setStatus] = useState("Camera Off");
   const [aiLog, setAiLog] = useState("Awaiting AI analysis...");
@@ -37,6 +76,34 @@ const CCTVPanel = () => {
     };
   }, []);
 
+  const submitVisualMedicalAlert = useCallback(async () => {
+    const now = Date.now();
+
+    if (now - lastVisualAlertRef.current < 30000) {
+      return;
+    }
+
+    lastVisualAlertRef.current = now;
+
+    const formData = new FormData();
+    formData.append("text", "visible bleeding injury detected on CCTV");
+    formData.append("location", "CCTV Zone");
+
+    const response = await fetch(`${API_BASE_URL}/report`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Report returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.error) {
+      throw new Error(data.error);
+    }
+  }, []);
+
   const captureAndSendFrame = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
 
@@ -47,6 +114,7 @@ const CCTVPanel = () => {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const localMedicalDetection = detectVisibleBleeding(canvas);
 
     canvas.toBlob(async (blob) => {
       if (!blob) return;
@@ -65,7 +133,12 @@ const CCTVPanel = () => {
         const data = await response.json();
 
         const detectedItems = data.detections || data.objects || [];
-        if (detectedItems.length > 0) {
+        if (localMedicalDetection) {
+          setAiLog("Alert: MEDICAL detected / visible bleeding");
+          submitVisualMedicalAlert().catch((error) => {
+            console.error("Visual medical report error:", error);
+          });
+        } else if (detectedItems.length > 0) {
           setAiLog(`Alert: detected ${detectedItems.join(", ")}`);
         } else if (
           data.crisis_type &&
@@ -81,7 +154,7 @@ const CCTVPanel = () => {
         setAiLog("Backend connection error");
       }
     }, "image/jpeg");
-  }, []);
+  }, [submitVisualMedicalAlert]);
 
   useEffect(() => {
     if (!isMonitoring) return undefined;
