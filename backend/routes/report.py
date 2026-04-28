@@ -5,6 +5,7 @@ import random
 import shutil
 import uuid
 import tempfile
+from pathlib import Path
 
 from backend.services.decision_engine import generate_decision
 from backend.services.llm_engine import generate_explanation
@@ -56,7 +57,8 @@ def rule_based_classification(text):
     ]
 
     threat_keywords = [
-        "gun", "weapon", "attack", "threat", "fight", "shooting"
+        "gun", "gunshot", "weapon", "attack", "threat", "fight", "shooting",
+        "pistol", "rifle", "shotgun", "knife", "armed", "intruder"
     ]
 
     for phrase in medical_keywords:
@@ -90,19 +92,26 @@ def report_incident(
         # AUDIO INPUT
         # -------------------------------
         if audio:
-            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            audio_suffix = Path(audio.filename or "audio.webm").suffix or ".webm"
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=audio_suffix) as tmp:
                 shutil.copyfileobj(audio.file, tmp)
                 tmp_path = tmp.name
 
-            text_input = transcribe_audio(tmp_path)
-            os.remove(tmp_path)
+            try:
+                text_input = transcribe_audio(tmp_path)
+            finally:
+                os.remove(tmp_path)
 
             print("DEBUG → Transcribed text:", text_input)
 
         # -------------------------------
         # FALLBACK
         # -------------------------------
-        if text_input is None:
+        if isinstance(text_input, str):
+            text_input = text_input.strip()
+
+        if not text_input:
             text_input = "unknown situation"
 
         # -------------------------------
@@ -150,12 +159,16 @@ def report_incident(
         # IMAGE OVERRIDE
         # -------------------------------
         if image:
-            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            image_suffix = Path(image.filename or "image.jpg").suffix or ".jpg"
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=image_suffix) as tmp:
                 shutil.copyfileobj(image.file, tmp)
                 tmp_path = tmp.name
 
-            img_pred, img_conf = analyze_image(tmp_path)
-            os.remove(tmp_path)
+            try:
+                img_pred, img_conf = analyze_image(tmp_path)
+            finally:
+                os.remove(tmp_path)
 
             if img_pred and img_conf > confidence:
                 prediction = img_pred

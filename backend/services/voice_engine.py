@@ -23,5 +23,5 @@ def get_model():
 
 
 def transcribe_audio(file_path: str) -> str:
-    result = get_model().transcribe(file_path)
-    return result["text"]
+    result = get_model().transcribe(file_path, fp16=False, task="transcribe")
+    return str(result.get("text", "")).strip()

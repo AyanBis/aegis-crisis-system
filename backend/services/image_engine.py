@@ -25,8 +25,16 @@ def _normalize_prediction(value):
         "wound": "medical",
         "bleeding": "medical",
         "blood": "medical",
+        "gun": "threat",
+        "firearm": "threat",
+        "pistol": "threat",
+        "rifle": "threat",
+        "shotgun": "threat",
+        "knife": "threat",
         "weapon": "threat",
         "violence": "threat",
+        "assault": "threat",
+        "intruder": "threat",
         "normal": "none",
         "safe": "none",
     }
@@ -54,7 +62,19 @@ def _parse_gemini_response(text):
         lowered = cleaned.lower()
         medical_words = ["blood", "bleeding", "wound", "injury", "injured", "hurt"]
         fire_words = ["fire", "flame", "smoke", "burning"]
-        threat_words = ["gun", "knife", "weapon", "attack", "violence"]
+        threat_words = [
+            "gun",
+            "firearm",
+            "pistol",
+            "rifle",
+            "shotgun",
+            "knife",
+            "weapon",
+            "attack",
+            "violence",
+            "assault",
+            "intruder",
+        ]
 
         if any(word in lowered for word in medical_words):
             prediction = "medical"
@@ -88,7 +108,8 @@ def _analyze_with_gemini(file_path):
         "You are an emergency CCTV triage classifier. Inspect the image and classify "
         "the visible crisis as exactly one of: fire, medical, threat, none. "
         "Use medical for visible blood, bleeding, wounds, unconscious people, severe injury, "
-        "or urgent first-aid situations. Use threat for weapons or physical attacks. "
+        "or urgent first-aid situations. Use threat for guns, pistols, rifles, shotguns, "
+        "knives, weapons, intruders, or physical attacks. "
         "Use fire for flames, heavy smoke, or burning. Return only JSON like "
         '{"crisis_type":"medical","confidence":0.91,"reason":"visible bleeding wound"}'
     )

@@ -10,6 +10,13 @@ const tokenStyle = {
   background: "var(--surface-raised)",
 };
 
+const formatResponderLabel = (responder) =>
+  String(responder || "")
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
 const DecisionPanel = () => {
   const { selectedIncident, setIncidentStatus, resolveIncident } = useApp();
 
@@ -27,13 +34,17 @@ const DecisionPanel = () => {
   }
 
   const getActions = () => {
-    switch (selectedIncident.type) {
-      case "Fire":
+    if (selectedIncident.decision?.actions?.length) {
+      return selectedIncident.decision.actions;
+    }
+
+    switch (String(selectedIncident.type || "").toLowerCase()) {
+      case "fire":
         return ["Dispatch fire unit", "Alert hospitals", "Evacuate area"];
-      case "Medical":
+      case "medical":
         return ["Send ambulance", "Notify medical staff", "Secure treatment route"];
-      case "Security":
-      case "Threat":
+      case "security":
+      case "threat":
         return ["Dispatch security team", "Lock nearby access points", "Sweep camera perimeter"];
       default:
         return ["Monitor situation", "Confirm nearby sensor data"];
@@ -41,11 +52,17 @@ const DecisionPanel = () => {
   };
 
   const getResponders = () => {
-    if (selectedIncident.type === "Fire") {
+    if (selectedIncident.decision?.responders?.length) {
+      return selectedIncident.decision.responders.map(formatResponderLabel);
+    }
+
+    const incidentType = String(selectedIncident.type || "").toLowerCase();
+
+    if (incidentType === "fire") {
       return ["Fire Dept", "Police", "Ambulance"];
     }
 
-    if (selectedIncident.type === "Security" || selectedIncident.type === "Threat") {
+    if (incidentType === "security" || incidentType === "threat") {
       return ["Security Ops", "Police"];
     }
 
@@ -55,7 +72,9 @@ const DecisionPanel = () => {
   const isResolved = selectedIncident.status === "RESOLVED";
   const isInProgress = selectedIncident.status === "IN_PROGRESS";
   const recommendedAction =
-    selectedIncident.decision?.recommended_action || getActions()[0];
+    selectedIncident.decision?.recommended_action ||
+    selectedIncident.decision?.actions?.[0] ||
+    getActions()[0];
 
   return (
     <Card
